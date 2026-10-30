@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "Revisar tasks.md al guardar la spec",
+  "description": "Al guardar requirements.md, design.md o tasks.md de una spec, comprueba que las tareas sigan en orden, cubran todos los requisitos y no contradigan el diseño.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      ".kiro/specs/**/requirements.md",
+      ".kiro/specs/**/design.md",
+      ".kiro/specs/**/tasks.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Se modificó una spec en .kiro/specs/. Lee requirements.md, design.md y tasks.md de esa misma carpeta y verifica: (1) cada requisito numerado aparece en al menos una tarea (_Requisitos: X.Y_); (2) las tareas están en orden de ejecución y las marcadas [x] corresponden a código existente en el repositorio; (3) el diseño no menciona recursos AWS que no estén en template.yaml. Informa de las inconsistencias encontradas y propone el cambio concreto en tasks.md. No edites archivos sin confirmación."
+  }
+}

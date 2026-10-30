@@ -76,4 +76,8 @@ function seed() {
   console.log(`📁 Base de datos guardada en: data/db.json`);
 }
 
-seed();
+// Ejecutar solo con `node src/db/seed.js`; la Lambda lo importa y lo llama
+if (require.main === module) seed();
+
+module.exports = { seed };
+

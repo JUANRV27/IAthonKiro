@@ -60,7 +60,7 @@ export default function App() {
     refresh();
   }, [refresh]);
 
-  const { connected } = useSocket(handleSocketEvent);
+  const { connected, mode } = useSocket(handleSocketEvent);
 
   // Estadísticas rápidas
   const stats = {
@@ -98,7 +98,7 @@ export default function App() {
             <StatPill color="#f97316" label={`🟠 ${stats.assigned} asignados`} />
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: connected ? '#22c55e' : '#ef4444' }}>
               <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: connected ? '#22c55e' : '#ef4444' }} />
-              {connected ? 'En línea' : 'Desconectado'}
+              {!connected ? 'Desconectado' : mode === 'polling' ? 'En línea (refresco cada 10 s)' : 'En línea'}
             </div>
           </div>
 

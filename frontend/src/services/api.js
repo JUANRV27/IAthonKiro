@@ -24,6 +24,9 @@ export const createAlert = (body) =>
   request('/alerts', { method: 'POST', body: JSON.stringify(body) });
 export const resolveAlert = (id) =>
   request(`/alerts/${id}/resolve`, { method: 'PATCH' });
+// IA generativa (Bedrock): boletín para brigadistas a partir de los datos de la alerta
+export const draftBriefing = (body) =>
+  request('/alerts/briefing', { method: 'POST', body: JSON.stringify(body) });
 export const autoAssign = (alertId) =>
   request(`/alerts/${alertId}/auto-assign`, { method: 'POST' });
 

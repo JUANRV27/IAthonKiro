@@ -1,0 +1,155 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  AMAPA - Sistema de Alertas FEN Piura (Kiro IAthon).
+  Una Lambda detrás de API Gateway HTTP API sirve la API (/health, /api/*)
+  y el frontend React compilado (GET /app).
+
+Parameters:
+  TeamId:
+    Type: String
+    Description: Id público del equipo en el portal (por ejemplo T042). Lo devuelve GET /health.
+    AllowedPattern: '^[A-Za-z0-9_-]{1,32}$'
+    ConstraintDescription: Solo letras, números, guion y guion bajo (máximo 32).
+  ModelId:
+    Type: String
+    Default: us.anthropic.claude-haiku-4-5-20251001-v1:0
+    Description: Perfil de inferencia US de Amazon Bedrock para el boletín IA (variable MODEL_ID).
+    AllowedPattern: '^us\.[a-z0-9.:-]+$'
+    ConstraintDescription: Debe ser un perfil de inferencia con prefijo "us." (por ejemplo us.amazon.nova-lite-v1:0).
+
+Resources:
+  AmapaHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 50
+        ThrottlingRateLimit: 20
+
+  ItemsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+
+  AmapaFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CodeUri: .
+      Handler: src/lambda.handler
+      Runtime: nodejs22.x
+      Architectures: [x86_64]
+      MemorySize: 512
+      Timeout: 20
+      Environment:
+        Variables:
+          TEAM_ID: !Ref TeamId
+          AMAPA_DATA_DIR: /tmp/amapa-data
+          NODE_ENV: production
+          TABLE_NAME: !Ref ItemsTable
+          MODEL_ID: !Ref ModelId
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+                - dynamodb:Scan
+                - dynamodb:UpdateItem
+              Resource: !GetAtt ItemsTable.Arn
+            # Converse con perfil de inferencia US: permiso sobre el perfil y sobre
+            # el modelo base en las regiones US a las que el perfil enruta.
+            - Effect: Allow
+              Action: bedrock:InvokeModel
+              Resource:
+                - !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/${ModelId}
+                - !Sub
+                  - arn:aws:bedrock:us-*::foundation-model/${BaseModelId}
+                  - BaseModelId: !Select [1, !Split ['us.', !Ref ModelId]]
+      Events:
+        AlertBriefing:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref AmapaHttpApi
+            Path: /api/alerts/briefing
+            Method: POST
+        JobsCreate:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref AmapaHttpApi
+            Path: /jobs
+            Method: POST
+        JobsGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref AmapaHttpApi
+            Path: /jobs/{jobId}
+            Method: GET
+        ItemsCreate:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref AmapaHttpApi
+            Path: /items
+            Method: POST
+        ItemsList:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref AmapaHttpApi
+            Path: /items
+            Method: GET
+        ItemsGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref AmapaHttpApi
+            Path: /items/{id}
+            Method: GET
+        Health:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref AmapaHttpApi
+            Path: /health
+            Method: GET
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref AmapaHttpApi
+            Path: /api/{proxy+}
+            Method: ANY
+        App:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref AmapaHttpApi
+            Path: /app
+            Method: GET
+        AppAssets:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref AmapaHttpApi
+            Path: /app/{proxy+}
+            Method: GET
+
+  AmapaFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AmapaFunction}
+      RetentionInDays: 14
+
+Outputs:
+  ItemsTableName:
+    Description: Tabla DynamoDB de /items
+    Value: !Ref ItemsTable
+  ApiUrl:
+    Description: URL base de la API (sin barra final)
+    Value: !Sub https://${AmapaHttpApi}.execute-api.${AWS::Region}.amazonaws.com
+  WebUrl:
+    Description: URL del frontend servido por la Lambda (sin barra final)
+    Value: !Sub https://${AmapaHttpApi}.execute-api.${AWS::Region}.amazonaws.com/app

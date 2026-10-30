@@ -127,7 +127,7 @@ export function AlertCard({ alert, brigadierId, onRefresh }) {
       {expanded && (
         <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #334155' }}>
           {alert.description && (
-            <p style={{ fontSize: '13px', color: '#cbd5e1', marginBottom: '8px' }}>{alert.description}</p>
+            <p style={{ fontSize: '13px', color: '#cbd5e1', marginBottom: '8px', whiteSpace: 'pre-line' }}>{alert.description}</p>
           )}
           {senamhi && (
             <div style={{ background: '#0f172a', borderRadius: '6px', padding: '8px', fontSize: '12px' }}>

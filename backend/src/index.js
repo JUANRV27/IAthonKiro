@@ -2,28 +2,14 @@
  * AMAPA — Servidor principal
  * Sistema de Alertas y Gestión de Brigadieres - FEN Piura
  */
-const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const cors = require('cors');
 
 const alertService = require('./services/alertService');
+const { createApp } = require('./app');
 
-// ── Express ────────────────────────────────────────────────────────────────
-const app = express();
-
-app.use(cors({ origin: '*' }));
-app.use(express.json());
-
-// ── Rutas API ──────────────────────────────────────────────────────────────
-app.use('/api/zones',      require('./routes/zones'));
-app.use('/api/alerts',     require('./routes/alerts'));
-app.use('/api/brigadiers', require('./routes/brigadiers'));
-
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString(), service: 'AMAPA Backend' });
-});
+// ── Express (rutas API + /health, definidas en app.js) ─────────────────────
+const app = createApp({ teamId: process.env.TEAM_ID || null });
 
 // ── Socket.IO ──────────────────────────────────────────────────────────────
 const server = http.createServer(app);

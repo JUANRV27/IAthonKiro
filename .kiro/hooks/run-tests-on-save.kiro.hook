@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "Ejecutar tests del backend al guardar",
+  "description": "Al guardar código del backend o sus tests, ejecuta npm test (node:test con tablas falsas) para no romper los contratos /health, /items y /jobs.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "backend/src/**/*.js",
+      "backend/test/**/*.js"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Se guardó un archivo del backend de AMAPA. Ejecuta `npm test` en la carpeta backend/ y resume el resultado. Si algún test falla, explica la causa y propone la corrección mínima sin cambiar los contratos de las insignias (/health → {status, team}; /items → {id, value}; /jobs → {jobId, status, output})."
+  }
+}

@@ -2,7 +2,7 @@
  * Modal para crear nueva alerta (simula input del SENAMHI)
  */
 import { useState, useEffect } from 'react';
-import { getZones, createAlert } from '../services/api';
+import { getZones, createAlert, draftBriefing } from '../services/api';
 
 export function CreateAlertModal({ onClose, onCreated }) {
   const [zones, setZones] = useState([]);
@@ -18,6 +18,8 @@ export function CreateAlertModal({ onClose, onCreated }) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [drafting, setDrafting] = useState(false);
+  const [aiInfo, setAiInfo] = useState(null); // { source, model }
 
   useEffect(() => {
     getZones().then(setZones).catch(console.error);
@@ -25,19 +27,43 @@ export function CreateAlertModal({ onClose, onCreated }) {
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
+  const buildSenamhiData = () => ({
+    precipitacion_mm: Number(form.precipitacion_mm) || undefined,
+    nivel_rio_m: Number(form.nivel_rio_m) || undefined,
+    pronostico_24h: form.pronostico_24h,
+    estacion: form.estacion || undefined,
+    fecha_reporte: new Date().toISOString(),
+  });
+
+  // IA generativa: redacta el boletín para brigadistas con los datos ingresados
+  async function handleDraftBriefing() {
+    if (!form.zone_id || !form.title) return setError('Para redactar con IA indica zona y título');
+    setDrafting(true);
+    setError(null);
+    try {
+      const result = await draftBriefing({
+        zone_id: Number(form.zone_id),
+        risk_level: form.risk_level,
+        title: form.title,
+        description: form.description || undefined,
+        senamhi_data: buildSenamhiData(),
+      });
+      set('description', result.text);
+      setAiInfo({ source: result.source, model: result.model });
+    } catch (err) {
+      setError(`No se pudo redactar el boletín: ${err.message}`);
+    } finally {
+      setDrafting(false);
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (!form.zone_id || !form.title) return setError('Zona y título son requeridos');
     setLoading(true);
     setError(null);
     try {
-      const senamhi_data = {
-        precipitacion_mm: Number(form.precipitacion_mm) || undefined,
-        nivel_rio_m: Number(form.nivel_rio_m) || undefined,
-        pronostico_24h: form.pronostico_24h,
-        estacion: form.estacion || undefined,
-        fecha_reporte: new Date().toISOString(),
-      };
+      const senamhi_data = buildSenamhiData();
       await createAlert({
         zone_id: Number(form.zone_id),
         risk_level: form.risk_level,
@@ -89,14 +115,6 @@ export function CreateAlertModal({ onClose, onCreated }) {
             required
           />
 
-          <label style={labelStyle}>Descripción</label>
-          <textarea
-            value={form.description}
-            onChange={e => set('description', e.target.value)}
-            style={{ ...inputStyle, height: '70px', resize: 'vertical' }}
-            placeholder="Descripción de la situación..."
-          />
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div>
               <label style={labelStyle}>Precipitación (mm/24h)</label>
@@ -118,6 +136,33 @@ export function CreateAlertModal({ onClose, onCreated }) {
 
           <label style={labelStyle}>Estación meteorológica</label>
           <input type="text" value={form.estacion} onChange={e => set('estacion', e.target.value)} style={inputStyle} placeholder="Ej: La Esperanza" />
+
+          {/* Boletín para brigadistas: lo redacta Amazon Bedrock con los datos de arriba */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '8px' }}>
+            <label style={labelStyle} htmlFor="alert-description">Boletín para brigadistas (descripción)</label>
+            <button
+              type="button"
+              onClick={handleDraftBriefing}
+              disabled={drafting || loading}
+              style={{ ...btnStyle('#7c3aed'), padding: '5px 10px', fontSize: '12px', opacity: drafting ? 0.7 : 1 }}
+            >
+              {drafting ? '✨ Redactando...' : '✨ Redactar boletín con IA'}
+            </button>
+          </div>
+          <textarea
+            id="alert-description"
+            value={form.description}
+            onChange={e => set('description', e.target.value)}
+            style={{ ...inputStyle, height: '140px', resize: 'vertical' }}
+            placeholder="Escribe notas o pulsa «Redactar boletín con IA» para generarlo con los datos SENAMHI..."
+          />
+          {aiInfo && (
+            <div style={{ fontSize: '11px', marginTop: '4px', color: aiInfo.source === 'bedrock' ? '#c4b5fd' : '#fbbf24' }}>
+              {aiInfo.source === 'bedrock'
+                ? '🤖 Redactado con IA (Amazon Bedrock). Revísalo y edítalo antes de crear la alerta.'
+                : '⚠️ La IA no respondió: se usó un boletín de respaldo con los datos ingresados.'}
+            </div>
+          )}
 
           {error && (
             <div style={{ background: '#7f1d1d', color: '#fca5a5', padding: '8px', borderRadius: '4px', fontSize: '12px', marginTop: '8px' }}>
