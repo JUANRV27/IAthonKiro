@@ -26,18 +26,18 @@ function seed() {
 
   // ----- BRIGADIERES -----
   const brigadiersData = [
-    { name: 'Carlos Ramos',    phone: '073-111001', lat: -5.1950, lng: -80.6330, status: 'available' },
-    { name: 'María Flores',    phone: '073-111002', lat: -5.2700, lng: -80.6800, status: 'available' },
-    { name: 'José Chunga',     phone: '073-111003', lat: -5.3000, lng: -80.6400, status: 'available' },
-    { name: 'Ana Sullón',      phone: '073-111004', lat: -5.5500, lng: -80.8200, status: 'available' },
-    { name: 'Pedro Távara',    phone: '073-111005', lat: -4.9400, lng: -80.3400, status: 'available' },
-    { name: 'Rosa Chumacero',  phone: '073-111006', lat: -5.1900, lng: -80.6300, status: 'available' },
-    { name: 'Luis Timana',     phone: '073-111007', lat: -5.1050, lng: -80.1700, status: 'available' },
-    { name: 'Carmen Panta',    phone: '073-111008', lat: -5.0900, lng: -81.1100, status: 'available' },
-    { name: 'Miguel Yamunaqué',phone: '073-111009', lat: -4.9000, lng: -80.6900, status: 'available' },
-    { name: 'Elena Nole',      phone: '073-111010', lat: -5.1800, lng: -79.9800, status: 'available' },
-    { name: 'Raúl Sandoval',   phone: '073-111011', lat: -5.2000, lng: -80.6500, status: 'available' },
-    { name: 'Gloria Zevallos', phone: '073-111012', lat: -5.2600, lng: -80.6700, status: 'available' },
+    { name: 'Brigada simulada 01', phone: null, lat: -5.1950, lng: -80.6330, status: 'available' },
+    { name: 'Brigada simulada 02', phone: null, lat: -5.2700, lng: -80.6800, status: 'available' },
+    { name: 'Brigada simulada 03', phone: null, lat: -5.3000, lng: -80.6400, status: 'available' },
+    { name: 'Brigada simulada 04', phone: null, lat: -5.5500, lng: -80.8200, status: 'available' },
+    { name: 'Brigada simulada 05', phone: null, lat: -4.9400, lng: -80.3400, status: 'available' },
+    { name: 'Brigada simulada 06', phone: null, lat: -5.1900, lng: -80.6300, status: 'available' },
+    { name: 'Brigada simulada 07', phone: null, lat: -5.1050, lng: -80.1700, status: 'available' },
+    { name: 'Brigada simulada 08', phone: null, lat: -5.0900, lng: -81.1100, status: 'available' },
+    { name: 'Brigada simulada 09', phone: null, lat: -4.9000, lng: -80.6900, status: 'available' },
+    { name: 'Brigada simulada 10', phone: null, lat: -5.1800, lng: -79.9800, status: 'available' },
+    { name: 'Brigada simulada 11', phone: null, lat: -5.2000, lng: -80.6500, status: 'available' },
+    { name: 'Brigada simulada 12', phone: null, lat: -5.2600, lng: -80.6700, status: 'available' },
   ];
   const brig = brigadiersData.map(b => db.insertBrigadier(b));
   console.log(`✅ ${brig.length} brigadieres insertados`);

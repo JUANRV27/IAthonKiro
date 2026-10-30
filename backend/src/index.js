@@ -7,9 +7,16 @@ const { Server } = require('socket.io');
 
 const alertService = require('./services/alertService');
 const { createApp } = require('./app');
+const { createMemoryReportesStore } = require('./services/reportesStore');
+const { createReportesService } = require('./services/reportesService');
 
 // ── Express (rutas API + /health, definidas en app.js) ─────────────────────
-const app = createApp({ teamId: process.env.TEAM_ID || null });
+// En local los reportes viven en memoria y se clasifican con las reglas EDAN
+// (sin MODEL_ID no se llama a Bedrock).
+const app = createApp({
+  teamId: process.env.TEAM_ID || null,
+  reportes: createReportesService({ store: createMemoryReportesStore() }),
+});
 
 // ── Socket.IO ──────────────────────────────────────────────────────────────
 const server = http.createServer(app);

@@ -39,6 +39,23 @@ Resources:
       SSESpecification:
         SSEEnabled: true
 
+  # Clasificación asíncrona: POST /reportes encola el id; la Lambda lo consume y llama a Bedrock
+  ClasificarDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600
+      SqsManagedSseEnabled: true
+
+  ClasificarQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      VisibilityTimeout: 120   # ≥ 6 × Timeout de la Lambda (20 s)
+      MessageRetentionPeriod: 86400
+      SqsManagedSseEnabled: true
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt ClasificarDLQ.Arn
+        maxReceiveCount: 3
+
   AmapaFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -57,7 +74,10 @@ Resources:
           NODE_ENV: production
           TABLE_NAME: !Ref ItemsTable
           MODEL_ID: !Ref ModelId
+          QUEUE_URL: !Ref ClasificarQueue
       Policies:
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt ClasificarQueue.QueueName
         - Statement:
             - Effect: Allow
               Action:
@@ -76,6 +96,30 @@ Resources:
                   - arn:aws:bedrock:us-*::foundation-model/${BaseModelId}
                   - BaseModelId: !Select [1, !Split ['us.', !Ref ModelId]]
       Events:
+        ClasificarReporte:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt ClasificarQueue.Arn
+            BatchSize: 1
+            FunctionResponseTypes: [ReportBatchItemFailures]
+        ReportesCreate:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref AmapaHttpApi
+            Path: /reportes
+            Method: POST
+        ReportesList:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref AmapaHttpApi
+            Path: /reportes
+            Method: GET
+        ReportesPatch:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref AmapaHttpApi
+            Path: /reportes/{id}
+            Method: PATCH
         AlertBriefing:
           Type: HttpApi
           Properties:
@@ -144,6 +188,9 @@ Resources:
       RetentionInDays: 14
 
 Outputs:
+  ClasificarQueueUrl:
+    Description: Cola SQS de clasificación de reportes
+    Value: !Ref ClasificarQueue
   ItemsTableName:
     Description: Tabla DynamoDB de /items
     Value: !Ref ItemsTable

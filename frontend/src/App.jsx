@@ -2,7 +2,7 @@
  * AMAPA — Aplicación principal
  * Sistema de Alertas y Gestión de Brigadieres - FEN Piura
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAlerts, getBrigadiers, getAlert } from './services/api';
 import { useSocket } from './hooks/useSocket';
 import { MapView } from './components/MapView';
@@ -19,10 +19,14 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('active'); // 'active' | 'all' | 'brigadiers'
   const [toast, setToast] = useState(null);
 
-  // Cargar datos
+  // Cargar datos. Solo se aplica la respuesta más reciente: si cambias de pestaña
+  // mientras otra petición sigue en curso, esa respuesta vieja se descarta.
+  const alertsRequestRef = useRef(0);
   const loadAlerts = useCallback(async () => {
+    const requestId = ++alertsRequestRef.current;
     try {
       const data = await getAlerts(activeTab === 'active');
+      if (requestId !== alertsRequestRef.current) return;
       setAlerts(data);
     } catch (err) {
       console.error('Error cargando alertas:', err);

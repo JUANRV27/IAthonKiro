@@ -119,8 +119,8 @@ IAthonKiro/
 ```javascript
 {
   id: number,
-  name: string,                  // "Carlos Ramos"
-  phone: string | null,          // "073-111001"
+  name: string,                  // "Brigada simulada 01" (dato simulado)
+  phone: string | null,          // null en el seed (sin teléfonos reales)
   lat: number,                   // Posición GPS actual
   lng: number,
   status: enum,                  // "available" | "assigned" | "offline"

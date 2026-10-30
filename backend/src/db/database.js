@@ -35,7 +35,9 @@ function load() {
 }
 
 /** Escribe el estado completo en disco (síncrono, simple para MVP) */
+let _writes = 0;
 function save(state) {
+  _writes += 1;
   fs.writeFileSync(DB_FILE, JSON.stringify(state, null, 2), 'utf8');
 }
 
@@ -56,6 +58,14 @@ const now = () => new Date().toISOString();
 const db = {
   /** Retorna el estado completo (para depuración) */
   getState: () => _state,
+
+  /** Reemplaza el estado en memoria (Lambda: lo carga desde DynamoDB en cada petición) */
+  replaceState(state) {
+    _state = { ...structuredClone(INITIAL), ...structuredClone(state) };
+  },
+
+  /** Cuántas escrituras hubo desde que arrancó el proceso (para saber si hay que guardar) */
+  getWriteCount: () => _writes,
 
   /** Resetea todo (usado por el seed) */
   reset() {

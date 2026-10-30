@@ -1,3 +1,5 @@
+Problema y para quién: las **brigadas y autoridades de Piura (COE distrital, Defensa Civil)** reciben los reportes del FEN dispersos por llamadas y WhatsApp y sin prioridad común; AMAPA les da un mapa en vivo donde la IA clasifica cada punto crítico en rojo, amarillo o verde para atender primero lo más urgente.
+
 # AMAPA — Sistema de Alertas y Gestión de Brigadieres
 ### Hackathon Kiro 2026 | FEN Piura
 
